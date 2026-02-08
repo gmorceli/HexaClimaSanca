@@ -3,7 +3,7 @@
 
 import argparse, requests, sys, json, time, os
 
-TOKEN_URL = "https://auth.hexacloud.com.br/oauth2/token"
+TOKEN_URL = "https://us-east-2dq7vvrkkx.auth.us-east-2.amazoncognito.com/oauth2/token"
 CLIENT_ID = "bmqgtcosbo6i3irv3ojkfjjoj"
 API_BASE = "https://m73akbtcad.execute-api.us-east-2.amazonaws.com/v1/"
 REDIRECT_URI = "http://localhost:3000"

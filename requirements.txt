@@ -1,1 +1,4 @@
 requests
+folium
+pandas
+numpy
