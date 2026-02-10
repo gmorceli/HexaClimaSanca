@@ -276,12 +276,35 @@ def print_summary(df):
         print(f"  {i:2d}. {row['session']:<30s} {row['rain_acc']:6.1f} mm  ({row['n_readings']} leituras){marker}")
 
 
+def generate_map(records, output_file):
+    """Gera o mapa a partir de uma lista de registros (dicts). Retorna o DataFrame tratado."""
+    print(f"Processando {len(records)} registros...")
+
+    df = pd.DataFrame(records)
+    df["time"] = pd.to_datetime(df["time"])
+    df["rain"] = pd.to_numeric(df["rain"], errors="coerce").fillna(0)
+
+    # Tratamento de outliers por leitura individual
+    df, ref_count, threshold = treat_outlier_readings(df)
+
+    # Acumular chuva por estacao
+    df = compute_accumulated_rain(df, ref_count)
+
+    print("\n--- Apos tratamento ---")
+    print(df[["session", "rain_acc", "n_readings"]].sort_values("rain_acc", ascending=False).to_string(index=False))
+
+    print_summary(df)
+    build_heatmap(df, output_file)
+
+    return df
+
+
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Mapa de calor - Chuva 24h São Carlos")
+    parser = argparse.ArgumentParser(description="Mapa de calor - Chuva 24h Sao Carlos")
     parser.add_argument("--code", help="Authorization code (se precisar renovar token)")
-    parser.add_argument("--output", default=None, help="Arquivo HTML de saída")
-    parser.add_argument("--data-file", help="Usar dados de arquivo JSON ao invés da API")
+    parser.add_argument("--output", default=None, help="Arquivo HTML de saida")
+    parser.add_argument("--data-file", help="Usar dados de arquivo JSON ao inves da API")
     args = parser.parse_args()
 
     output_dir = os.path.join(os.path.dirname(__file__), "..", "output")
@@ -296,22 +319,7 @@ def main():
         print("Erro: use --data-file para carregar dados coletados.")
         sys.exit(1)
 
-    # Criar DataFrame
-    df = pd.DataFrame(records)
-    df["time"] = pd.to_datetime(df["time"])
-    df["rain"] = pd.to_numeric(df["rain"], errors="coerce").fillna(0)
-
-    # Tratamento de outliers por leitura individual
-    df, ref_count, threshold = treat_outlier_readings(df)
-
-    # Acumular chuva por estação
-    df = compute_accumulated_rain(df, ref_count)
-
-    print("\n--- Apos tratamento ---")
-    print(df[["session", "rain_acc", "n_readings"]].sort_values("rain_acc", ascending=False).to_string(index=False))
-
-    print_summary(df)
-    build_heatmap(df, output_file)
+    df = generate_map(records, output_file)
 
     # Salvar dados tratados
     data_file = os.path.join(output_dir, "chuva_24h_tratada.json")
